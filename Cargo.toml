@@ -1,0 +1,10 @@
+[package]
+name = "footswitch-rs"
+version = "0.1.0"
+authors = ["Dennis <dennis@dennispotter.eu>"]
+
+[dependencies]
+structopt = "0.2.10"
+hidapi = "0.4.1"
+users = "0.7"
+
