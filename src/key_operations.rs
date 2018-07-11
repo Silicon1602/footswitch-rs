@@ -276,19 +276,54 @@ static KEY_MAP : &[(&str, u8)] = &[
     ("<ff>"                , 0xff),
 ];
 
-pub fn decode_byte(c: &str) -> u8 {
+enum Modifier {
+    Ctrl = 1,
+    Shift = 2,
+    Alt = 4,
+    Win = 8,
+}
+
+enum MouseButton {
+    MouseLeft = 1,
+    MouseRight = 2,
+    MouseMiddle = 4,
+    MouseDouble = 8,
+}
+
+pub fn encode_byte(c: &str) -> u8 {
     for key in KEY_MAP.iter() {
         if key.0 == c {
             return key.1
         }
     }
-    
     return 0
 }
 
-pub fn print_key_map(rows: usize) {
+pub fn decode_byte(u: u8) -> Option<String> {
+    for key in KEY_MAP.iter() {
+        if key.1 == u {
+            return Some(key.0.to_string())
+        }
+    }
+    return None;
+}
 
-    print!("{}", " ‖ Key Name             ¦ Value     ".repeat(rows));
+pub fn print_key(response: &[u8]) -> Option<String> {
+    let mut key_combo = String::new();
+
+    if response[3] != 0 {
+        if let Some(key_str) = decode_byte(response[3]) {
+            key_combo.push_str(&key_str);
+
+            return Some(key_combo);
+        }
+    }
+    
+    return None;
+}
+
+pub fn print_key_map(rows: usize) {
+print!("{}", " ‖ Key Name             ¦ Value     ".repeat(rows));
     println!(" ‖");
 
     println!(" {}", "-".repeat(rows*36));        
@@ -301,5 +336,4 @@ pub fn print_key_map(rows: usize) {
             println!(" ‖");
         }
     }
-
 }
