@@ -3,6 +3,7 @@
 //! `footswitch-rs` enables you to use footswitches of <xxx>
 
 mod key_operations;
+mod pedal_operations;
 
 #[macro_use]
 extern crate structopt;
@@ -30,8 +31,9 @@ struct Opt {
     output: Option<PathBuf>,
 }
 
-
 fn main() {
+    let pedals = pedal_operations::Pedals::new(); 
+    println!("{:?}", pedals.ped_data[1].length);
     check_sudo();
 
     let opt = Opt::from_args();
@@ -81,6 +83,7 @@ fn check_sudo() {
 }
 
 /// Read the current values of the pedals
+//ToDo: Move to pedals struct and split read and interpret functionality
 fn read_pedals(dev: & hidapi::HidDevice) {
     let column_width = 15;
     let total_width = (column_width+3)*3;
@@ -112,4 +115,3 @@ fn read_pedals(dev: & hidapi::HidDevice) {
     // Print simple footer
     println!("‖\n {}", "-".repeat(total_width));        
 }
-
