@@ -33,7 +33,6 @@ struct Opt {
 
 fn main() {
     let pedals = pedal_operations::Pedals::new(); 
-    println!("{:?}", pedals.ped_data[1].length);
     check_sudo();
 
     let opt = Opt::from_args();
@@ -71,7 +70,12 @@ fn main() {
 
     // All options that need the device to be open
     if opt.read {
-        read_pedals(& dev);
+        pedals.read_pedals(& dev);
+    }
+
+    //ToDo: set right if condition
+    if true {
+        pedals.write_pedals(& dev);
     }
 }
 
@@ -80,38 +84,4 @@ fn check_sudo() {
     if users::get_current_uid() != 0 {
         panic!("Please execute this application as super user!");
     }
-}
-
-/// Read the current values of the pedals
-//ToDo: Move to pedals struct and split read and interpret functionality
-fn read_pedals(dev: & hidapi::HidDevice) {
-    let column_width = 15;
-    let total_width = (column_width+3)*3;
-
-    let mut buf = [0u8; 8];
-    let mut query = [0x01u8, 0x82, 0x08, 0x01, 0x00, 0x00, 0x00, 0x00];
-
-    // Print header
-    println!(" {}", "-".repeat(total_width));        
-    println!(" ‖{name:^width$}‖", name = "Programmed Keys", width = total_width - 2);
-    println!(" {}", "-".repeat(total_width));        
-
-    // Read and print keys
-    for i in 0..3 {
-        query[3] = i + 1;
-
-        dev.write(&query).unwrap();
-
-        let res = dev.read(&mut buf[..]).unwrap();
-
-        
-        let key_name = match key_operations::print_key(&buf[..res]) {
-            Some(key) => key,
-            None => "< None >".to_string(),
-        };
-        print!(" ‖ {name:^-width$}", name = key_name, width = column_width);
-    }
-
-    // Print simple footer
-    println!("‖\n {}", "-".repeat(total_width));        
 }
