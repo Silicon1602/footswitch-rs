@@ -45,6 +45,8 @@ fn main() {
     }
 
     // Open device
+    // This is the reason, the device is not part of the struct: https://github.com/Osspial/hidapi-rs/issues/16
+    // Maybe this can be fixed, as soon as this is merged into the crate: https://github.com/Osspial/hidapi-rs/pull/12
     let vld_dev = [
         (0x0c45u16, 0x7403u16),
         (0x0c45   , 0x7404),
