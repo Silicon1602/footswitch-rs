@@ -5,7 +5,7 @@ extern crate hidapi;
 pub struct PedalsData {
     header: [u8; 8],
     data: [u8; 48],
-    length: i32,
+    length: u8,
 }
 
 pub struct Pedals {
@@ -55,8 +55,10 @@ impl Pedals {
 
         query[3] += ped;
 
+        // Write query to device
         dev.write(&query).unwrap();
 
+        // Read answer
         dev.read(&mut buf[..]).unwrap();
 
         buf
@@ -90,16 +92,18 @@ impl Pedals {
         dev.write(&self.ped_data[ped].header).unwrap();
 
         // Write data to device in 8 byte chunks
-        for i in 0..self.ped_data[ped].length {
+        for i in 0..(self.ped_data[ped].length / 8) {
             // Set bounds
-            let low:usize = i as usize;
-            let up:usize = 8*(i+1) as usize;
+
+            let low:usize = (i * 8) as usize;
+            let up:usize = 8 * (i + 1) as usize;
 
             // Write to device
             dev.write(&self.ped_data[ped].data[low..up]).unwrap();
         }
     }
 
+    /// This method writes all data from Pedals.peddata to the device
     pub fn write_pedals(&self, dev: & hidapi::HidDevice) {
         dev.write(&self.start).unwrap();
 
