@@ -290,16 +290,6 @@ enum MouseButton {
     MouseDouble = 8,
 }
 
-pub fn valid_key(c: &str) -> bool {
-    for key in KEY_MAP.iter() {
-        if key.0 == c {
-            return true;
-        }
-    }
-
-    false
-}
-
 pub fn encode_byte(c: &str) -> Option<u8> {
     for key in KEY_MAP.iter() {
         if key.0 == c {
