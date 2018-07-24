@@ -18,9 +18,9 @@ impl Pedals {
         // Prepare variables
         let start = [0x01u8, 0x80, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00];
 
-        let header_0 = [0x01u8, 0x81, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00];
-        let header_1 = [0x01u8, 0x81, 0x08, 0x01, 0x00, 0x00, 0x00, 0x00];
-        let header_2 = [0x01u8, 0x81, 0x08, 0x02, 0x00, 0x00, 0x00, 0x00];
+        let header_0 = [0x01u8, 0x81, 0x08, 0x01, 0x00, 0x00, 0x00, 0x00];
+        let header_1 = [0x01u8, 0x81, 0x08, 0x02, 0x00, 0x00, 0x00, 0x00];
+        let header_2 = [0x01u8, 0x81, 0x08, 0x03, 0x00, 0x00, 0x00, 0x00];
 
         let mut default_data = [0u8; 48];
         default_data[0] = 0x08;
@@ -92,17 +92,23 @@ impl Pedals {
         dev.write(&self.ped_data[ped].header).unwrap();
 
         // Write data to device in 8 byte chunks
+        let mut up:usize = 0;
+
         for i in 0..(self.ped_data[ped].length / 8) {
             // Set bounds
-
-            let low:usize = (i * 8) as usize;
-            let up:usize = 8 * (i + 1) as usize;
+            let low = (i * 8) as usize;
+            up  = 8 * (i + 1) as usize;
 
             // Write to device
             dev.write(&self.ped_data[ped].data[low..up]).unwrap();
         }
-    }
 
+        // Write remaining values to device
+        if self.ped_data[ped].length % 8 > 0 {
+            dev.write(&self.ped_data[ped].data[up..(self.ped_data[ped].length as usize)]).unwrap();
+        }
+    }
+    
     /// This method writes all data from Pedals.peddata to the device
     pub fn write_pedals(&self, dev: & hidapi::HidDevice) {
         dev.write(&self.start).unwrap();
@@ -111,4 +117,16 @@ impl Pedals {
             self.write_pedal(dev, i)
         }
     }
+
+    pub fn set_key(& mut self, ped:usize, key:&str) {
+
+        if let Some(encoded_key) = key_operations::encode_byte(key) {
+            self.ped_data[ped].data[1] = 1;
+            self.ped_data[ped].data[3] = encoded_key;
+        }
+        else {
+            //ToDo: add "print list" if value is not recognized
+        }
+    }
+
 }

@@ -32,7 +32,7 @@ struct Opt {
 }
 
 fn main() {
-    let pedals = pedal_operations::Pedals::new(); 
+    let mut pedals = pedal_operations::Pedals::new(); 
     check_sudo();
 
     let opt = Opt::from_args();
@@ -70,14 +70,13 @@ fn main() {
     let dev = api.open_path(dev_path.as_str()).unwrap();
     println!("Succesfully opened device.");
 
+    //ToDo: This part of the code is just there to test functions
+    pedals.set_key(0, "b");
+    pedals.write_pedals(& dev);
+
     // All options that need the device to be open
     if opt.read {
         pedals.read_pedals(& dev);
-    }
-
-    //ToDo: set right if condition
-    if true {
-        pedals.write_pedals(& dev);
     }
 }
 

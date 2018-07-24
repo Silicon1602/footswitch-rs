@@ -290,13 +290,24 @@ enum MouseButton {
     MouseDouble = 8,
 }
 
-pub fn encode_byte(c: &str) -> u8 {
+pub fn valid_key(c: &str) -> bool {
     for key in KEY_MAP.iter() {
         if key.0 == c {
-            return key.1
+            return true;
         }
     }
-    return 0
+
+    false
+}
+
+pub fn encode_byte(c: &str) -> Option<u8> {
+    for key in KEY_MAP.iter() {
+        if key.0 == c {
+            return Some(key.1)
+        }
+    }
+
+    None
 }
 
 pub fn decode_byte(u: u8) -> Option<String> {
@@ -305,7 +316,8 @@ pub fn decode_byte(u: u8) -> Option<String> {
             return Some(key.0.to_string())
         }
     }
-    return None;
+
+    None
 }
 
 pub fn print_key(response: &[u8]) -> Option<String> {
@@ -319,7 +331,7 @@ pub fn print_key(response: &[u8]) -> Option<String> {
         }
     }
     
-    return None;
+    None
 }
 
 pub fn print_key_map(rows: usize) {
