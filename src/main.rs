@@ -10,25 +10,48 @@ extern crate structopt;
 extern crate hidapi;
 extern crate users;
 
-
-use std::path::PathBuf;
 use std::process;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
 #[structopt(name = "rust-footswitch")]
 struct Opt {
-    /// Read all pedals
-    #[structopt(short = "r", long = "read")]
-    read: bool,
-    
     /// Prints a table of all keys with <listkeys> rows
     #[structopt(short = "l", long = "listkeys")]
     listkeys: Option<usize>,
 
-    /// Select pedal (left: 1, middle: 2, right: 3)
-    #[structopt(short = "p", long = "pedal", parse(from_os_str))]
-    output: Option<PathBuf>,
+    #[structopt(subcommand)]
+    cmd: Option<Command>,
+}
+
+#[derive(StructOpt, Debug)]
+enum Command {
+    /// Write to the footpedal
+    #[structopt(name = "write")]
+    Write {
+        /// Specify pedal to modify with following command. Possible values: [0 | 1 | 2]
+        #[structopt(short = "p", long = "pedal")]
+        pedal: Vec<u8>,
+
+        /// Command to apply. Possible values: [set_key | del_key | append_key | append_str]
+        #[structopt(short = "c", long = "command")]
+        command: Vec<String>,
+
+        /// Value to apply
+        #[structopt(short = "v", long = "value")]
+        value: Vec<String>,
+    },
+
+    #[structopt(name = "read")]
+    Read {
+        /// Read all pedals
+        #[structopt(short = "a", long = "all")]
+        all: bool,
+
+        /// Specify specific pedals. Possible values: [0 | 1 | 2]
+        #[structopt(short = "p", long = "pedal")]
+        pedals: Vec<u8>,
+    }
 }
 
 fn main() {
@@ -66,23 +89,74 @@ fn main() {
         }
     }
     
-
     let dev = api.open_path(dev_path.as_str()).unwrap();
     println!("Succesfully opened device.");
 
-    //ToDo: This part of the code is just there to test functions
-    pedals.set_key(0, "b");
-    pedals.write_pedals(& dev);
 
     // All options that need the device to be open
-    if opt.read {
-        pedals.read_pedals(& dev);
+    match opt.cmd { 
+        Some(Command::Write {pedal: ped_list, command: cmd_list, value: val_list}) => {
+            if ped_list.len() != cmd_list.len() && ped_list.len() != val_list.len() {
+                eprintln!("Error: You must define as much pedals as you define commands and as you define values!");
+                process::exit(0);
+            }
+
+            for (i, cmd) in cmd_list.iter().enumerate() {
+                match cmd as &str {
+                    "wr_key" => {
+                        pedals.set_key(i, val_list[i].as_str());
+                    }
+                    "del_key" => {
+                    }
+                    "append_key" => {
+                    }
+                    "append_str" => {
+                    }
+                    _ => {
+                        eprintln!("Error: Unkonwn command!");
+                        process::exit(0);
+                    }
+                }
+            }
+            
+            // Since we ran the Write command without any errors, we are now writing everything
+            pedals.write_pedals(& dev);
+
+            println!("Succesfully wrote everything to footpedal!");
+            println!("The current state of the device is shown below.\n");
+
+            // Show user current state of pedal
+                pedals.read_pedals(&dev, vec![0,1,2]);
+
+        },
+        Some(Command::Read {all: all_var, pedals: ped_list}) => {
+            if ped_list.len() > 3 {
+                eprintln!("Error: Number of pedals may not be bigger than 3!");
+                process::exit(0);
+            }
+
+            if all_var {
+                pedals.read_pedals(&dev, vec![0,1,2]);
+            }
+            else if ped_list.len() > 0 {
+                pedals.read_pedals(&dev, ped_list)
+            }
+            else {
+                eprintln!("Error: You did not specify any command. Run './footswitch-rs read --help' for more information");
+                process::exit(0);
+            }
+        }, 
+        None => { 
+            eprintln!("Error: You did not specify any command. Run './footswitch-rs --help' for more information.");
+            process::exit(0);
+        }
     }
 }
 
 /// Checks if user is super user
 fn check_sudo() {
     if users::get_current_uid() != 0 {
-        panic!("Please execute this application as super user!");
+        eprintln!("Error: Please execute this application as super user!");
+        process::exit(0);
     }
 }

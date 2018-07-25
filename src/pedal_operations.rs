@@ -1,6 +1,7 @@
 #[path = "key_operations.rs"] mod key_operations;
 
 extern crate hidapi;
+use std::process;
 
 pub struct PedalsData {
     header: [u8; 8],
@@ -49,7 +50,7 @@ impl Pedals {
         }
     }
 
-    fn read_pedal(&self, dev: & hidapi::HidDevice, ped:u8) -> [u8; 8] {
+    pub fn read_pedal(&self, dev: & hidapi::HidDevice, ped:& u8) -> [u8; 8] {
         let mut buf = [0u8; 8];
         let mut query = [0x01u8, 0x82, 0x08, 0x01, 0x00, 0x00, 0x00, 0x00];
 
@@ -65,26 +66,49 @@ impl Pedals {
     }
 
     /// Read the current values of the pedals
-    pub fn read_pedals(&self, dev: & hidapi::HidDevice) {
-        let column_width = 15;
-        let total_width = (column_width+3)*3;
+    pub fn read_pedals(&self, dev: & hidapi::HidDevice, peds: Vec<u8>) {
+        // This is kind of hacky, but for number of pedals == 2, the table shifts.
+        let total_width = 62 + (peds.len() == 2) as usize;
+        let column_width = 60 / peds.len() + (3 - peds.len());
 
         // Print header
-        println!(" {}", "-".repeat(total_width));        
-        println!(" ‖{name:^width$}‖", name = "Programmed Keys", width = total_width - 2);
-        println!(" {}", "-".repeat(total_width));        
+        println!(" ╔{}╗", "═".repeat(total_width)); 
+        println!(" ║{name:^width$}║", name = "Programmed Keys", width = total_width);
+        println!(" ╠{}╣", "═".repeat(total_width));
+
+        // Print space before pedal number row
+        print!(" ");
+
+        // Print pedal numbers
+        for i in peds.iter() {
+            // Check if passed pedal number is valid
+            if *i > 2 {
+                eprintln!("Error: Pedal value {} is larger than 2 and thus not valid!", i);
+                process::exit(0);
+            }
+
+            // Print pedal numbers
+            print!("│{ped_nr:^-width$}", ped_nr = i, width = column_width);
+        }
+
+        println!("│\n ├{}┤", "─".repeat(total_width));
+
+        // Print space before value row
+        print!(" ");
 
         // Read and print keys
-        for i in 0..3 {
+        for i in peds.iter() {
+            // Read value from pedal and directly translate it to a key
             let key_name = match key_operations::print_key(&self.read_pedal(dev, i)) {
                 Some(key) => key,
                 None => "< None >".to_string(),
             };
-            print!(" ‖ {name:^-width$}", name = key_name, width = column_width);
+
+            print!("│{name:^-width$}", name = key_name, width = column_width);
         }
 
         // Print simple footer
-        println!("‖\n {}", "-".repeat(total_width));        
+        println!("│\n └{}┘", "─".repeat(total_width));
     }
 
     fn write_pedal(&self, dev: & hidapi::HidDevice, ped:usize) {
@@ -125,7 +149,8 @@ impl Pedals {
             self.ped_data[ped].data[3] = encoded_key;
         }
         else {
-            //ToDo: add "print list" if value is not recognized
+            eprintln!("Error: Key '{}' is not recognized! Please provide a valid key, listed in './footswitch-rs --listkeys 4'", key);
+            process::exit(0);
         }
     }
 
