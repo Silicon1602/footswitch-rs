@@ -43,9 +43,9 @@ enum Command {
         #[structopt(short = "c", long = "command")]
         command: Vec<String>,
 
-        /// Value to apply
-        #[structopt(short = "v", long = "value")]
-        value: Vec<String>,
+        /// Input values to apply
+        #[structopt(short = "i", long = "input")]
+        input: Vec<String>,
     },
 
     #[structopt(name = "read")]
@@ -63,10 +63,11 @@ enum Command {
 fn main() {
     let mut pedals = pedal_operations::Pedals::new(); 
 
+    let opt = Opt::from_args();
+
     welcome("footswitch-rs, Dennis Potter <dennis@dennispotter.eu>");
     check_sudo();
 
-    let opt = Opt::from_args();
 
     // All options that don't need the device to be open
     // Print all keys and exit application
@@ -104,9 +105,9 @@ fn main() {
 
     // All options that need the device to be open
     match opt.cmd { 
-        Some(Command::Write {pedal: ped_list, command: cmd_list, value: val_list}) => {
+        Some(Command::Write {pedal: ped_list, command: cmd_list, input: val_list}) => {
             if ped_list.len() != cmd_list.len() && ped_list.len() != val_list.len() {
-                error!("You must define as much pedals as you define commands and as you define values!");
+                error!("You must define as much pedals as you define commands and as you define input values!");
             }
 
             for (i, cmd) in cmd_list.iter().enumerate() {
@@ -130,7 +131,7 @@ fn main() {
             pedals.write_pedals(& dev);
 
             info!("Succesfully wrote everything to footpedal!");
-            info!("The current state of the device is shown below.\n");
+            info!("The current state of the device is shown below.");
 
             // Show user current state of pedal
             pedals.read_pedals(&dev, vec![0,1,2]);
