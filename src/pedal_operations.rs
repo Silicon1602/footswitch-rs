@@ -1,6 +1,6 @@
 #[macro_use]
-#[path = "messages.rs"] mod messages;
-#[path = "key_operations.rs"] mod key_operations;
+#[path = "messages.rs"] pub mod messages;
+#[path = "key_operations.rs"] pub mod key_operations;
 
 extern crate hidapi;
 use std::process;

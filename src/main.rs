@@ -2,8 +2,8 @@
 //! 
 //! `footswitch-rs` enables you to use footswitches of <xxx>
 //! 
-mod key_operations;
-mod pedal_operations;
+pub mod key_operations;
+pub mod pedal_operations;
 
 #[macro_use]
 mod messages;
