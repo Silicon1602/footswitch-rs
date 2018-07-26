@@ -325,7 +325,7 @@ pub fn print_key(response: &[u8]) -> Option<String> {
 }
 
 pub fn print_key_map(rows: usize) {
-print!("{}", " ‖ Key Name             ¦ Value     ".repeat(rows));
+    print!("{}", " ‖ Key Name             ¦ Value     ".repeat(rows));
     println!(" ‖");
 
     println!(" {}", "-".repeat(rows*36));        

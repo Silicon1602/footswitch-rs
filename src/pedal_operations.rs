@@ -1,7 +1,10 @@
+#[macro_use]
+#[path = "messages.rs"] mod messages;
 #[path = "key_operations.rs"] mod key_operations;
 
 extern crate hidapi;
 use std::process;
+use colored::*;
 
 pub struct PedalsData {
     header: [u8; 8],
@@ -72,29 +75,22 @@ impl Pedals {
         let column_width = 60 / peds.len() + (3 - peds.len());
 
         // Print header
-        println!(" ╔{}╗", "═".repeat(total_width)); 
-        println!(" ║{name:^width$}║", name = "Programmed Keys", width = total_width);
-        println!(" ╠{}╣", "═".repeat(total_width));
-
-        // Print space before pedal number row
-        print!(" ");
+        println!("├{}┐", "─".repeat(total_width)); 
+        println!("│{name:^width$}│", name = "Programmed Keys", width = total_width);
+        println!("╞{}╡", "═".repeat(total_width));
 
         // Print pedal numbers
         for i in peds.iter() {
             // Check if passed pedal number is valid
             if *i > 2 {
-                eprintln!("Error: Pedal value {} is larger than 2 and thus not valid!", i);
-                process::exit(0);
+                error!("Pedal value {} is larger than 2 and thus not valid!", i);
             }
 
             // Print pedal numbers
             print!("│{ped_nr:^-width$}", ped_nr = i, width = column_width);
         }
 
-        println!("│\n ├{}┤", "─".repeat(total_width));
-
-        // Print space before value row
-        print!(" ");
+        println!("│\n├{}┤", "─".repeat(total_width));
 
         // Read and print keys
         for i in peds.iter() {
@@ -108,7 +104,7 @@ impl Pedals {
         }
 
         // Print simple footer
-        println!("│\n └{}┘", "─".repeat(total_width));
+        println!("│\n├{}┘", "─".repeat(total_width));
     }
 
     fn write_pedal(&self, dev: & hidapi::HidDevice, ped:usize) {
@@ -149,8 +145,7 @@ impl Pedals {
             self.ped_data[ped].data[3] = encoded_key;
         }
         else {
-            eprintln!("Error: Key '{}' is not recognized! Please provide a valid key, listed in './footswitch-rs --listkeys 4'", key);
-            process::exit(0);
+            error!("Key '{}' is not recognized! Please provide a valid key, listed in './footswitch-rs --listkeys 4'", key);
         }
     }
 
