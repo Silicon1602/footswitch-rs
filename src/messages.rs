@@ -18,15 +18,18 @@ macro_rules! warning {
 #[macro_export]
 macro_rules! error {
     ($($arg:tt)*) => { 
-        eprintln!("└ {:7} — {}", "Error".on_red().white(), format_args!($($arg)*));
-        process::exit(0);
+        {
+            eprintln!("└ {:7} — {}", "Error".on_red().white(), format_args!($($arg)*));
+            println!("");
+            process::exit(0);
+        }
     };
 }
 
 pub fn welcome(string: &str) {
-    println!("┌{}┐", "─".repeat(string.len() + 2)); 
-    println!("│{text:^-width$}│", text = string, width = string.len() + 2);
-    println!("├{}┘", "─".repeat(string.len() + 2));
+    println!("┌{}┐", "─".repeat(string.len() + 20));
+    println!("│{text:^-width$}│", text = string, width = string.len() + 20);
+    println!("├{}┘", "─".repeat(string.len() + 20));
 }
 
 pub fn goodbye() {

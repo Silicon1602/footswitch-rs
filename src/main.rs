@@ -85,9 +85,18 @@ fn main() {
         (0x413d   , 0x2107)
     ];
 
-    info!("Initializing HidApi. This can take a moment.");
+    info!("Initializing HID object. This can take a moment.");
 
-    let api = hidapi::HidApi::new().expect("Hidapi init failed!");
+    let api = match hidapi::HidApi::new() {
+        Ok(res) => {
+            info!("Succesfully initialized HID object.");
+            res
+        },
+        Err(_) => {
+            error!("Could not initialize HID object.")
+        },
+    };
+
     let mut dev_path = String::new();
 
     for device in &api.devices() {
@@ -98,9 +107,16 @@ fn main() {
             }
         }
     }
-    
-    let dev = api.open_path(dev_path.as_str()).unwrap();
-    info!("Succesfully opened device.");
+
+    let dev = match api.open_path(dev_path.as_str()) {
+        Ok(res) => {
+            info!("Succesfully opened device.");
+            res
+        },
+        Err(_) => {
+            error!("Could not open device. Make sure your device is connected. Maybe try to reconnect it.")
+        },
+    };
 
 
     // All options that need the device to be open
