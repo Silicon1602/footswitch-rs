@@ -128,14 +128,15 @@ fn main() {
 
             for (i, cmd) in cmd_list.iter().enumerate() {
                 match cmd as &str {
-                    "wr_key" => {
-                        pedals.set_key(i, val_list[i].as_str());
+                    "set_key" => {
+                        pedals.set_key(ped_list[i] as usize, val_list[i].as_str());
                     }
                     "del_key" => {
                     }
                     "append_key" => {
                     }
                     "append_str" => {
+                        pedals.set_string(ped_list[i] as usize, val_list[i].as_str());
                     }
                     _ => {
                         error!("Unkonwn command!");

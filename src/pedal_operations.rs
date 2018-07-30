@@ -6,6 +6,28 @@ extern crate hidapi;
 use std::process;
 use colored::*;
 
+#[derive(Copy, Clone)]
+enum Type {
+    Unconfigured = 0,
+    Key = 1,
+    Mouse = 2,
+    MouseKey = 3,
+    String = 4
+}
+
+impl Type {
+    fn value(value:u8) -> Option<Type> {
+        match value {
+            0 => Some(Type::Unconfigured),
+            1 => Some(Type::Key),
+            2 => Some(Type::Mouse),
+            3 => Some(Type::MouseKey),
+            4 => Some(Type::String),
+            _ => None
+        }
+    }
+}
+
 pub struct PedalsData {
     header: [u8; 8],
     data: [u8; 48],
@@ -14,7 +36,7 @@ pub struct PedalsData {
 
 pub struct Pedals {
     start: [u8; 8],
-    pub ped_data: Vec<PedalsData>,
+    ped_data: Vec<PedalsData>,
 }
 
 impl Pedals {
@@ -47,8 +69,7 @@ impl Pedals {
                 PedalsData {
                     header: header_2,  
                     data: default_data,
-                    length: 8,
-                },
+                    length: 8, },
             ]
         }
     }
@@ -95,7 +116,18 @@ impl Pedals {
         // Read and print keys
         for i in peds.iter() {
             // Read value from pedal and directly translate it to a key
-            let key_name = match key_operations::print_key(&self.read_pedal(dev, i)) {
+            let mut key_value = self.read_pedal(dev, i);
+
+            let key_name_option = match Type::value(key_value[1]) {
+                Some(Type::Unconfigured) => None,
+                Some(Type::Key) => key_operations::print_key(&key_value),
+                Some(Type::Mouse) => key_operations::print_key(&key_value),
+                Some(Type::MouseKey) => key_operations::print_key(&key_value),
+                Some(Type::String) => self.print_string(dev, & mut key_value),
+                None => error!("The key type which was returned by the pedal was invalid!")
+            };
+
+            let key_name = match key_name_option {
                 Some(key) => key,
                 None => "< None >".to_string(),
             };
@@ -105,6 +137,47 @@ impl Pedals {
 
         // Print simple footer
         println!("│\n├{}┘", "─".repeat(total_width));
+    }
+
+    /// Sets the type of the function. False (0) if everything went fine, True (1) if
+    /// an error occurred.
+    fn set_type(& mut self, ped:usize, typ:Type) {
+        let set_value = if self.ped_data[ped].data[1] == 0 { true } else { false };
+
+        if set_value {
+            self.ped_data[ped].data[1] = typ as u8;
+        }
+
+        let ret = match typ {
+            Type::String => {
+                // If nothing is set, set type to string and length to 2
+                if set_value {
+                    self.ped_data[ped].length = 2;
+                }
+
+                // Check if pedal type is set to String, otherwise error
+                self.ped_data[ped].data[1] != Type::String as u8
+            }
+            _ => {
+                let ret;
+
+                if self.ped_data[ped].data[1] == Type::String as u8 {
+                    // if type is Key or Mouse, and String is already set, return false
+                    ret = true;
+                }
+                else {
+                    // else, set type to new type and return true
+                    self.ped_data[ped].data[1] |= typ as u8;
+                    ret = false;
+                }
+
+                ret
+            }
+        };
+
+        if ret {
+            error!("Invalid combination of options!");
+        }
     }
 
     fn write_pedal(&self, dev: & hidapi::HidDevice, ped:usize) {
@@ -139,9 +212,9 @@ impl Pedals {
     }
 
     pub fn set_key(& mut self, ped:usize, key:&str) {
-
         if let Some(encoded_key) = key_operations::encode_byte(key) {
-            self.ped_data[ped].data[1] = 1;
+            self.set_type(ped, Type::Key);
+
             self.ped_data[ped].data[3] = encoded_key;
         }
         else {
@@ -149,4 +222,62 @@ impl Pedals {
         }
     }
 
+    pub fn print_string(&self, dev: & hidapi::HidDevice, response: & mut [u8]) -> Option<String> {
+        let mut string = String::new();
+        let mut len = response[0] - 2;
+        let mut ind = 2;
+
+        while len > 0 {
+
+            if ind == 8 {
+                dev.read(&mut response[..]).unwrap();
+
+                ind = 0;
+            }
+
+            if let Some(key_str) = key_operations::decode_byte(&response[ind]) {
+                string.push_str(&key_str[..]);
+            }
+
+            len -= 1;
+            ind += 1;
+        }
+
+        Some(string)
+    }
+
+
+    pub fn set_string(& mut self, ped:usize, key:&str) {
+            self.set_type(ped, Type::String);
+
+            if key.len() > 38 {
+                error!("The size of each string must be smaller than or equal to 38.");
+            }
+
+            let encoded_vector = match key_operations::encode_string(&key) {
+                Some(x) => x,
+                None => error!("Could not encode string!"),
+            };
+
+            self.compile_string_data(ped, encoded_vector);
+    }
+
+    fn compile_string_data(& mut self, ped:usize, enc_vec:Vec<u8>) {
+        let len = enc_vec.len() as u8;
+
+        if self.ped_data[ped].length + len > 38 {
+            error!("The size of the accumulated string must be smaller than or equal to 38.")
+        }
+
+        let start_byte = self.ped_data[ped].length as usize;
+        for (i, c) in enc_vec.iter().enumerate() {
+            self.ped_data[ped].data[start_byte + i] = *c;
+        }
+
+        self.ped_data[ped].length += len;
+        self.ped_data[ped].header[2] = self.ped_data[ped].length;
+        self.ped_data[ped].data[0] = self.ped_data[ped].length;
+
+
+    }
 }

@@ -300,9 +300,9 @@ pub fn encode_byte(c: &str) -> Option<u8> {
     None
 }
 
-pub fn decode_byte(u: u8) -> Option<String> {
+pub fn decode_byte(u: &u8) -> Option<String> {
     for key in KEY_MAP.iter() {
-        if key.1 == u {
+        if key.1 == *u {
             return Some(key.0.to_string())
         }
     }
@@ -310,11 +310,24 @@ pub fn decode_byte(u: u8) -> Option<String> {
     None
 }
 
+pub fn encode_string(s: &str) -> Option<Vec<u8> > {
+    let mut char_vec = Vec::new();
+
+    for c in s.chars() {
+        match encode_byte(&c.to_string()) {
+           Some(x) => char_vec.push(x),
+           None => return None,
+        };
+    }
+
+    Some(char_vec)
+}
+
 pub fn print_key(response: &[u8]) -> Option<String> {
     let mut key_combo = String::new();
 
     if response[3] != 0 {
-        if let Some(key_str) = decode_byte(response[3]) {
+        if let Some(key_str) = decode_byte(&response[3]) {
             key_combo.push_str(&key_str);
 
             return Some(key_combo);
