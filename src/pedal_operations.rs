@@ -92,31 +92,24 @@ impl Pedals {
     /// Read the current values of the pedals
     pub fn read_pedals(&self, dev: & hidapi::HidDevice, peds: Vec<u8>) {
         // This is kind of hacky, but for number of pedals == 2, the table shifts.
-        let total_width = 62 + (peds.len() == 2) as usize;
-        let column_width = 60 / peds.len() + (3 - peds.len());
+        let total_width = 55 as usize;
+
+        // Check if passed pedal number is valid
+        for i in peds.iter() {
+            if *i > 2 {
+                error!("Pedal value {} is larger than 2 and thus not valid!", i);
+            }
+        }
 
         // Print header
         println!("├{}┐", "─".repeat(total_width)); 
         println!("│{name:^width$}│", name = "Programmed Keys", width = total_width);
         println!("╞{}╡", "═".repeat(total_width));
 
-        // Print pedal numbers
-        for i in peds.iter() {
-            // Check if passed pedal number is valid
-            if *i > 2 {
-                error!("Pedal value {} is larger than 2 and thus not valid!", i);
-            }
-
-            // Print pedal numbers
-            print!("│{ped_nr:^-width$}", ped_nr = i, width = column_width);
-        }
-
-        println!("│\n├{}┤", "─".repeat(total_width));
-
         // Read and print keys
-        for i in peds.iter() {
+        for (i, ped) in peds.iter().enumerate() {
             // Read value from pedal and directly translate it to a key
-            let mut key_value = self.read_pedal(dev, i);
+            let mut key_value = self.read_pedal(dev, ped);
 
             let key_name_option = match Type::value(key_value[1]) {
                 Some(Type::Unconfigured) => None,
@@ -132,11 +125,16 @@ impl Pedals {
                 None => "< None >".to_string(),
             };
 
-            print!("│{name:^-width$}", name = key_name, width = column_width);
+            println!("│  Pedal {ped}  │  {name:<-width$}│", ped = i, name = key_name, width = total_width - 14);
+
+            // Print spacer between lines
+            if i != peds.len() - 1 {
+                println!("│ {}┼{name:<-width$}│", "─".repeat(10), name = "─".repeat(total_width - 14), width = total_width - 12);
+            }
         }
 
         // Print simple footer
-        println!("│\n├{}┘", "─".repeat(total_width));
+        println!("├{}┘", "─".repeat(total_width));
     }
 
     /// Sets the type of the function. False (0) if everything went fine, True (1) if
