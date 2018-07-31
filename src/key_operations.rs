@@ -293,6 +293,15 @@ impl Modifier {
             _ => None,
         }
     }
+
+    pub fn string(modifier:Modifier) -> String {
+        match modifier {
+            Modifier::Ctrl => "ctrl".to_string(),
+            Modifier::Shift => "shift".to_string(),
+            Modifier::Alt => "alt".to_string(),
+            Modifier::Win => "win".to_string(),
+        }
+    }
 }
 
 enum MouseButton {
@@ -338,6 +347,25 @@ pub fn encode_string(s: &str) -> Option<Vec<u8> > {
 pub fn print_key(response: &[u8]) -> Option<String> {
     let mut key_combo = String::new();
 
+    // Handle modifiers
+    if response[2] & Modifier::Ctrl as u8 != 0 {
+        key_combo.push_str(&Modifier::string(Modifier::Ctrl)[..]);
+        key_combo.push_str("+");
+    }
+    if response[2] & Modifier::Shift as u8 != 0 {
+        key_combo.push_str(&Modifier::string(Modifier::Shift)[..]);
+        key_combo.push_str("+");
+    }
+    if response[2] & Modifier::Alt as u8 != 0 {
+        key_combo.push_str(&Modifier::string(Modifier::Alt)[..]);
+        key_combo.push_str("+");
+    }
+    if response[2] & Modifier::Win as u8 != 0 {
+        key_combo.push_str(&Modifier::string(Modifier::Win)[..]);
+        key_combo.push_str("+");
+    }
+
+    // Handle others keys
     if response[3] != 0 {
         if let Some(key_str) = decode_byte(&response[3]) {
             key_combo.push_str(&key_str);
