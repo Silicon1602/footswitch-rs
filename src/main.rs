@@ -138,8 +138,11 @@ fn main() {
                     "append_str" => {
                         pedals.set_string(ped_list[i] as usize, val_list[i].as_str());
                     }
+                    "append_mod" => {
+                        pedals.set_modifier(ped_list[i] as usize, val_list[i].as_str());
+                    }
                     _ => {
-                        error!("Unkonwn command!");
+                        error!("Unknown command!");
                     }
                 }
             }

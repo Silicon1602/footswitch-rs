@@ -276,11 +276,23 @@ static KEY_MAP : &[(&str, u8)] = &[
     ("<ff>"                , 0xff),
 ];
 
-enum Modifier {
+pub enum Modifier {
     Ctrl = 1,
     Shift = 2,
     Alt = 4,
     Win = 8,
+}
+
+impl Modifier {
+    pub fn value(modifier:&str) -> Option<Modifier> {
+        match modifier {
+            "ctrl" => Some(Modifier::Ctrl),
+            "shift" => Some(Modifier::Shift),
+            "alt" => Some(Modifier::Alt),
+            "win" => Some(Modifier::Win),
+            _ => None,
+        }
+    }
 }
 
 enum MouseButton {

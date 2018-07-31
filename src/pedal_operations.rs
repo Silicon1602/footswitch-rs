@@ -220,6 +220,17 @@ impl Pedals {
         }
     }
 
+    pub fn set_modifier(& mut self, ped:usize, modifier:&str) {
+        let modifier = match key_operations::Modifier::value(modifier) {
+            Some(x) => x,
+            None => error!("Unkown modifier! Please use one of the following: ctrl, shift, alt, win."),
+        };
+
+        self.set_type(ped, Type::Key);
+
+        self.ped_data[ped].data[2] |= modifier as u8;
+    }
+
     pub fn print_string(&self, dev: & hidapi::HidDevice, response: & mut [u8]) -> Option<String> {
         let mut string = String::new();
         let mut len = response[0] - 2;
