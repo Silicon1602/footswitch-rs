@@ -16,14 +16,15 @@ enum Type {
 }
 
 impl Type {
-    fn value(value:u8) -> Option<Type> {
+    fn u8_to_enum(value:u8) -> Option<Type> {
         match value {
-            0 => Some(Type::Unconfigured),
-            1 => Some(Type::Key),
-            2 => Some(Type::Mouse),
-            3 => Some(Type::MouseKey),
-            4 => Some(Type::String),
-            _ => None
+            0       => Some(Type::Unconfigured),
+            1       => Some(Type::Key),
+            2       => Some(Type::Mouse),
+            3       => Some(Type::MouseKey),
+            4       => Some(Type::String),
+            0x81    => Some(Type::Key),
+            _       => None
         }
     }
 }
@@ -111,10 +112,10 @@ impl Pedals {
             // Read value from pedal and directly translate it to a key
             let mut key_value = self.read_pedal(dev, ped);
 
-            let key_name_option = match Type::value(key_value[1]) {
+            let key_name_option = match Type::u8_to_enum(key_value[1]) {
                 Some(Type::Unconfigured) => None,
                 Some(Type::Key) => key_operations::print_key(&key_value),
-                Some(Type::Mouse) => key_operations::print_key(&key_value),
+                Some(Type::Mouse) => key_operations::print_mousebutton(&key_value),
                 Some(Type::MouseKey) => key_operations::print_key(&key_value),
                 Some(Type::String) => self.print_string(dev, & mut key_value),
                 None => error!("The key type which was returned by the pedal was invalid!")
@@ -221,7 +222,7 @@ impl Pedals {
     }
 
     pub fn set_modifier(& mut self, ped:usize, modifier:&str) {
-        let modifier = match key_operations::Modifier::value(modifier) {
+        let modifier = match key_operations::Modifier::str_to_enum(modifier) {
             Some(x) => x,
             None => error!("Unkown modifier! Please use one of the following: ctrl, shift, alt, win."),
         };
@@ -229,6 +230,17 @@ impl Pedals {
         self.set_type(ped, Type::Key);
 
         self.ped_data[ped].data[2] |= modifier as u8;
+    }
+
+    pub fn set_mousebutton(& mut self, ped:usize, mousebutton:&str) {
+        let mousebutton = match key_operations::MouseButton::str_to_enum(mousebutton) {
+            Some(x) => x,
+            None => error!("Unkown mousebutton! Please use one of the following: mouse_left, mouse_middle, mouse_right, mouse_double."),
+        };
+
+        self.set_type(ped, Type::Mouse);
+
+        self.ped_data[ped].data[4] |= mousebutton as u8;
     }
 
     pub fn print_string(&self, dev: & hidapi::HidDevice, response: & mut [u8]) -> Option<String> {

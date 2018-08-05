@@ -39,7 +39,7 @@ enum Command {
         #[structopt(short = "p", long = "pedal")]
         pedal: Vec<u8>,
 
-        /// Command to apply. Possible values: [set_key | del_key | append_key | append_str]
+        /// Command to apply. Possible values: [set_key | set_mousebutton | del_key | app_key | app_str | app_mod]
         #[structopt(short = "c", long = "command")]
         command: Vec<String>,
 
@@ -131,14 +131,17 @@ fn main() {
                     "set_key" => {
                         pedals.set_key(ped_list[i] as usize, val_list[i].as_str());
                     }
+                    "set_mouse" => {
+                        pedals.set_mousebutton(ped_list[i] as usize, val_list[i].as_str());
+                    }
                     "del_key" => {
                     }
-                    "append_key" => {
+                    "app_key" => {
                     }
-                    "append_str" => {
+                    "app_str" => {
                         pedals.set_string(ped_list[i] as usize, val_list[i].as_str());
                     }
-                    "append_mod" => {
+                    "app_mod" => {
                         pedals.set_modifier(ped_list[i] as usize, val_list[i].as_str());
                     }
                     _ => {
@@ -150,7 +153,7 @@ fn main() {
             // Since we ran the Write command without any errors, we are now writing everything
             pedals.write_pedals(& dev);
 
-            info!("Succesfully wrote everything to footpedal!");
+            info!("Successfully wrote everything to footpedal!");
             info!("The current state of the device is shown below.");
 
             // Show user current state of pedal

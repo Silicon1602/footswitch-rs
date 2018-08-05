@@ -284,7 +284,7 @@ pub enum Modifier {
 }
 
 impl Modifier {
-    pub fn value(modifier:&str) -> Option<Modifier> {
+    pub fn str_to_enum(modifier:&str) -> Option<Modifier> {
         match modifier {
             "ctrl" => Some(Modifier::Ctrl),
             "shift" => Some(Modifier::Shift),
@@ -294,7 +294,7 @@ impl Modifier {
         }
     }
 
-    pub fn string(modifier:Modifier) -> String {
+    pub fn enum_to_string(modifier:Modifier) -> String {
         match modifier {
             Modifier::Ctrl => "ctrl".to_string(),
             Modifier::Shift => "shift".to_string(),
@@ -304,11 +304,42 @@ impl Modifier {
     }
 }
 
-enum MouseButton {
+pub enum MouseButton {
     MouseLeft = 1,
     MouseRight = 2,
     MouseMiddle = 4,
     MouseDouble = 8,
+}
+
+impl MouseButton {
+    pub fn str_to_enum(mousebutton:&str) -> Option<MouseButton> {
+        match mousebutton {
+            "mouse_left" => Some(MouseButton::MouseLeft),
+            "mouse_right" => Some(MouseButton::MouseRight),
+            "mouse_middle" => Some(MouseButton::MouseMiddle),
+            "mouse_double" => Some(MouseButton::MouseDouble),
+            _ => None,
+        }
+    }
+
+    pub fn u8_to_enum(mousebutton:u8) -> Option<MouseButton> {
+        match mousebutton {
+            1 => Some(MouseButton::MouseLeft),
+            2 => Some(MouseButton::MouseRight),
+            3 => Some(MouseButton::MouseMiddle),
+            4 => Some(MouseButton::MouseDouble),
+            _ => None,
+        }
+    }
+
+    pub fn enum_to_string(mousebutton:MouseButton) -> String {
+        match mousebutton {
+            MouseButton::MouseLeft => "mouse_left".to_string(),
+            MouseButton::MouseRight => "mouse_right".to_string(),
+            MouseButton::MouseMiddle => "mouse_middle".to_string(),
+            MouseButton::MouseDouble => "mouse_double".to_string(),
+        }
+    }
 }
 
 pub fn encode_byte(c: &str) -> Option<u8> {
@@ -349,19 +380,19 @@ pub fn print_key(response: &[u8]) -> Option<String> {
 
     // Handle modifiers
     if response[2] & Modifier::Ctrl as u8 != 0 {
-        key_combo.push_str(&Modifier::string(Modifier::Ctrl)[..]);
+        key_combo.push_str(&Modifier::enum_to_string(Modifier::Ctrl)[..]);
         key_combo.push_str("+");
     }
     if response[2] & Modifier::Shift as u8 != 0 {
-        key_combo.push_str(&Modifier::string(Modifier::Shift)[..]);
+        key_combo.push_str(&Modifier::enum_to_string(Modifier::Shift)[..]);
         key_combo.push_str("+");
     }
     if response[2] & Modifier::Alt as u8 != 0 {
-        key_combo.push_str(&Modifier::string(Modifier::Alt)[..]);
+        key_combo.push_str(&Modifier::enum_to_string(Modifier::Alt)[..]);
         key_combo.push_str("+");
     }
     if response[2] & Modifier::Win as u8 != 0 {
-        key_combo.push_str(&Modifier::string(Modifier::Win)[..]);
+        key_combo.push_str(&Modifier::enum_to_string(Modifier::Win)[..]);
         key_combo.push_str("+");
     }
 
@@ -375,6 +406,27 @@ pub fn print_key(response: &[u8]) -> Option<String> {
     }
     
     None
+}
+
+
+pub fn print_mousebutton(response: &[u8]) -> Option<String> {
+    let mut mouse_string = String::new();
+
+    match MouseButton::u8_to_enum(response[4]) {
+        Some(x) => mouse_string.push_str(&MouseButton::enum_to_string(x)[..]),
+        None => {}
+    }
+
+    let mut x:i16 = if response[5] > 127 { response[5] as i16 - 256 } else { response[5] as i16 };
+    let mut y:i16 = if response[6] > 127 { response[6] as i16 - 256 } else { response[6] as i16 };
+    let mut w:i16 = if response[7] > 127 { response[7] as i16 - 256 } else { response[7] as i16 };
+
+    mouse_string.push_str(&format!(" X = {}", x)[..]);
+    mouse_string.push_str(&format!(" Y = {}", y)[..]);
+    mouse_string.push_str(&format!(" W = {}", w)[..]);
+
+    Some(mouse_string)
+
 }
 
 pub fn print_key_map(rows: usize) {
