@@ -408,7 +408,6 @@ pub fn print_key(response: &[u8]) -> Option<String> {
     None
 }
 
-
 pub fn print_mousebutton(response: &[u8]) -> Option<String> {
     let mut mouse_string = String::new();
 
@@ -417,9 +416,9 @@ pub fn print_mousebutton(response: &[u8]) -> Option<String> {
         None => {}
     }
 
-    let mut x:i16 = if response[5] > 127 { response[5] as i16 - 256 } else { response[5] as i16 };
-    let mut y:i16 = if response[6] > 127 { response[6] as i16 - 256 } else { response[6] as i16 };
-    let mut w:i16 = if response[7] > 127 { response[7] as i16 - 256 } else { response[7] as i16 };
+    let x:i16 = if response[5] > 127 { response[5] as i16 - 256 } else { response[5] as i16 };
+    let y:i16 = if response[6] > 127 { response[6] as i16 - 256 } else { response[6] as i16 };
+    let w:i16 = if response[7] > 127 { response[7] as i16 - 256 } else { response[7] as i16 };
 
     mouse_string.push_str(&format!(" X = {}", x)[..]);
     mouse_string.push_str(&format!(" Y = {}", y)[..]);
@@ -427,6 +426,28 @@ pub fn print_mousebutton(response: &[u8]) -> Option<String> {
 
     Some(mouse_string)
 
+}
+
+pub fn print_mouse_key(response: &[u8]) -> Option<String> {
+    let mut key_mouse_string = String::new();
+
+    match print_key(&response) {
+        Some(x) => {
+            key_mouse_string.push_str(&x[..]);
+            key_mouse_string.push_str(" ");
+        },
+        None => {}
+    }
+
+    match print_mousebutton(&response) {
+        Some(x) => {
+            key_mouse_string.push_str(&x[..]);
+            key_mouse_string.push_str(" ");
+        },
+        None => {}
+    }
+    
+    Some(key_mouse_string)
 }
 
 pub fn print_key_map(rows: usize) {

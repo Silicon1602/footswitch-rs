@@ -131,7 +131,7 @@ fn main() {
                     "set_key" => {
                         pedals.set_key(ped_list[i] as usize, val_list[i].as_str());
                     }
-                    "set_mouse" => {
+                    "set_mousebutton" => {
                         pedals.set_mousebutton(ped_list[i] as usize, val_list[i].as_str());
                     }
                     "del_key" => {
@@ -143,6 +143,15 @@ fn main() {
                     }
                     "app_mod" => {
                         pedals.set_modifier(ped_list[i] as usize, val_list[i].as_str());
+                    }
+                    "set_x" => {
+                        pedals.set_mouse_xyw(ped_list[i] as usize, val_list[i].as_str(), 5)
+                    }
+                    "set_y" => {
+                        pedals.set_mouse_xyw(ped_list[i] as usize, val_list[i].as_str(), 6)
+                    }
+                    "set_w" => {
+                        pedals.set_mouse_xyw(ped_list[i] as usize, val_list[i].as_str(), 7)
                     }
                     _ => {
                         error!("Unknown command!");

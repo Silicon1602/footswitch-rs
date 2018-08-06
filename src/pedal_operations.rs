@@ -116,7 +116,7 @@ impl Pedals {
                 Some(Type::Unconfigured) => None,
                 Some(Type::Key) => key_operations::print_key(&key_value),
                 Some(Type::Mouse) => key_operations::print_mousebutton(&key_value),
-                Some(Type::MouseKey) => key_operations::print_key(&key_value),
+                Some(Type::MouseKey) => key_operations::print_mouse_key(&key_value),
                 Some(Type::String) => self.print_string(dev, & mut key_value),
                 None => error!("The key type which was returned by the pedal was invalid!")
             };
@@ -235,12 +235,41 @@ impl Pedals {
     pub fn set_mousebutton(& mut self, ped:usize, mousebutton:&str) {
         let mousebutton = match key_operations::MouseButton::str_to_enum(mousebutton) {
             Some(x) => x,
-            None => error!("Unkown mousebutton! Please use one of the following: mouse_left, mouse_middle, mouse_right, mouse_double."),
+            None => error!("Unknown mousebutton! Please use one of the following: mouse_left, mouse_middle, mouse_right, mouse_double."),
         };
 
         self.set_type(ped, Type::Mouse);
 
         self.ped_data[ped].data[4] |= mousebutton as u8;
+    }
+
+    pub fn set_mouse_xyw(& mut self, ped:usize, value:&str, direction:usize) {
+        // The values of the directions match the array index of ped_data[].data[]
+        // X = 5
+        // Y = 6
+        // W = 7
+
+        // Translate value passed by user to integer
+        let value_i8 = match value.parse::<i8>() {
+            Ok(x) => x,
+            Err(x) => {
+                error!("The value of {} ({}) must be in [-128, 127]! Message: {}.", direction, value, x)
+            }
+        };
+
+        // Translate to u8
+        let mut value_u8 = value_i8 as u8;
+
+        // Check if mouse wheel movement is smaller than 0, if so, add 256
+        if (direction == 7) & (value_i8 < 0) {
+            value_u8 += value_i8 as u8 + 256;
+        }
+
+        // Set Mouse Type
+        self.set_type(ped, Type::Mouse);
+
+        // Actually write data
+        self.ped_data[ped].data[direction] = value_u8;
     }
 
     pub fn print_string(&self, dev: & hidapi::HidDevice, response: & mut [u8]) -> Option<String> {
