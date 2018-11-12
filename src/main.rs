@@ -10,7 +10,6 @@ mod messages;
 
 #[macro_use]
 extern crate structopt;
-extern crate hidapi;
 extern crate users;
 extern crate colored;
 
@@ -61,8 +60,6 @@ enum Command {
 }
 
 fn main() {
-    let mut pedals = pedal_operations::Pedals::new(); 
-
     let opt = Opt::from_args();
 
     welcome("footswitch-rs, Dennis Potter <dennis@dennispotter.eu>");
@@ -76,47 +73,8 @@ fn main() {
         goodbye();
     }
 
-    // Open device
-    // This is the reason, the device is not part of the struct: https://github.com/Osspial/hidapi-rs/issues/16
-    // Maybe this can be fixed, as soon as this is merged into the crate: https://github.com/Osspial/hidapi-rs/pull/12
-    let vld_dev = [
-        (0x0c45u16, 0x7403u16),
-        (0x0c45   , 0x7404),
-        (0x413d   , 0x2107)
-    ];
+    let mut pedals = pedal_operations::Pedals::new(); 
 
-    info!("Initializing HID object. This can take a moment.");
-
-    let api = match hidapi::HidApi::new() {
-        Ok(res) => {
-            info!("Succesfully initialized HID object.");
-            res
-        },
-        Err(_) => {
-            error!("Could not initialize HID object.")
-        },
-    };
-
-    let mut dev_path = String::new();
-
-    for device in &api.devices() {
-        for val in vld_dev.iter() {
-            if *val == (device.vendor_id, device.product_id) && device.interface_number == 1 {
-                info!("Found device {:x}:{:x} ({})", device.vendor_id, device.product_id, device.path);
-                dev_path = device.path.clone();
-            }
-        }
-    }
-
-    let dev = match api.open_path(dev_path.as_str()) {
-        Ok(res) => {
-            info!("Succesfully opened device.");
-            res
-        },
-        Err(_) => {
-            error!("Could not open device. Make sure your device is connected. Maybe try to reconnect it.")
-        },
-    };
 
 
     // All options that need the device to be open
@@ -160,13 +118,13 @@ fn main() {
             }
 
             // Since we ran the Write command without any errors, we are now writing everything
-            pedals.write_pedals(& dev);
+            pedals.write_pedals();
 
             info!("Successfully wrote everything to footpedal!");
             info!("The current state of the device is shown below.");
 
             // Show user current state of pedal
-            pedals.read_pedals(&dev, vec![0,1,2]);
+            pedals.read_pedals(vec![0,1,2]);
 
             goodbye();
 
@@ -177,10 +135,10 @@ fn main() {
             }
 
             if all_var {
-                pedals.read_pedals(&dev, vec![0,1,2]);
+                pedals.read_pedals(vec![0,1,2]);
             }
             else if ped_list.len() > 0 {
-                pedals.read_pedals(&dev, ped_list)
+                pedals.read_pedals(ped_list)
             }
             else {
                 error!("You did not specify any command. Run './footswitch-rs read --help' for more information");

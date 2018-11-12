@@ -4,6 +4,7 @@
 
 extern crate hidapi;
 use std::process;
+use std::ffi::CString;
 use colored::*;
 
 #[derive(Copy, Clone)]
@@ -36,12 +37,55 @@ pub struct PedalsData {
 }
 
 pub struct Pedals {
+    dev:hidapi::HidDevice,
+
     start: [u8; 8],
     ped_data: Vec<PedalsData>,
 }
 
 impl Pedals {
     pub fn new() -> Pedals {
+        // Open device
+        let vld_dev = [
+            (0x0c45u16, 0x7403u16),
+            (0x0c45   , 0x7404),
+            (0x413d   , 0x2107)
+        ];
+
+        info!("Initializing HID object. This can take a moment.");
+
+        let api = match hidapi::HidApi::new() {
+            Ok(res) => {
+                info!("Successfully initialized HID object.");
+                res
+            },
+            Err(_) => {
+                error!("Could not initialize HID object.")
+            },
+        };
+
+        let mut dev_path = CString::new("").unwrap();
+
+        for device in api.devices() {
+            for val in vld_dev.iter() {
+                if *val == (device.vendor_id, device.product_id) && device.interface_number == 1 {
+                    info!("Found device {:x}:{:x} ({:#?})", device.vendor_id, device.product_id, device.path);
+                    dev_path = device.path.clone();
+                }
+            }
+        }
+
+        // Moved this out of loop, because of error of "possibly uninitialized `dev`. Don't try to move it in the loop.
+        let dev = match api.open_path(&dev_path) {
+            Ok(res) => {
+                info!("Successfully opened device.");
+                res
+            },
+            Err(_) => {
+                error!("Could not open device. Make sure your device is connected. Maybe try to reconnect it.")
+            },
+        };
+    
         // Prepare variables
         let start = [0x01u8, 0x80, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00];
 
@@ -54,6 +98,7 @@ impl Pedals {
 
         // Initialize actual object
         Pedals { 
+            dev: dev,
             start: start,
 
             ped_data: vec![
@@ -75,23 +120,23 @@ impl Pedals {
         }
     }
 
-    pub fn read_pedal(&self, dev: & hidapi::HidDevice, ped:& u8) -> [u8; 8] {
+    pub fn read_pedal(&self, ped:& u8) -> [u8; 8] {
         let mut buf = [0u8; 8];
         let mut query = [0x01u8, 0x82, 0x08, 0x01, 0x00, 0x00, 0x00, 0x00];
 
         query[3] += ped;
 
         // Write query to device
-        dev.write(&query).unwrap();
+        self.dev.write(&query).unwrap();
 
         // Read answer
-        dev.read(&mut buf[..]).unwrap();
+        self.dev.read(&mut buf[..]).unwrap();
 
         buf
     }
 
     /// Read the current values of the pedals
-    pub fn read_pedals(&self, dev: & hidapi::HidDevice, peds: Vec<u8>) {
+    pub fn read_pedals(&self, peds: Vec<u8>) {
         let total_width = 55 as usize;
 
         // Check if passed pedal number is valid
@@ -109,14 +154,14 @@ impl Pedals {
         // Read and print keys
         for (i, ped) in peds.iter().enumerate() {
             // Read value from pedal and directly translate it to a key
-            let mut key_value = self.read_pedal(dev, ped);
+            let mut key_value = self.read_pedal(ped);
 
             let key_name_option = match Type::u8_to_enum(key_value[1]) {
                 Some(Type::Unconfigured) => None,
                 Some(Type::Key) => key_operations::print_key(&key_value),
                 Some(Type::Mouse) => key_operations::print_mousebutton(&key_value),
                 Some(Type::MouseKey) => key_operations::print_mouse_key(&key_value),
-                Some(Type::String) => self.print_string(dev, & mut key_value),
+                Some(Type::String) => self.print_string(& mut key_value),
                 None => error!("The key type which was returned by the pedal was invalid!")
             };
 
@@ -178,9 +223,9 @@ impl Pedals {
         }
     }
 
-    fn write_pedal(&self, dev: & hidapi::HidDevice, ped:usize) {
+    fn write_pedal(&self, ped:usize) {
         // First, write header
-        dev.write(&self.ped_data[ped].header).unwrap();
+        self.dev.write(&self.ped_data[ped].header).unwrap();
 
         // Write data to device in 8 byte chunks
         let mut up:usize = 0;
@@ -191,21 +236,21 @@ impl Pedals {
             up  = 8 * (i + 1) as usize;
 
             // Write to device
-            dev.write(&self.ped_data[ped].data[low..up]).unwrap();
+            self.dev.write(&self.ped_data[ped].data[low..up]).unwrap();
         }
 
         // Write remaining values to device
         if self.ped_data[ped].length % 8 > 0 {
-            dev.write(&self.ped_data[ped].data[up..(self.ped_data[ped].length as usize)]).unwrap();
+            self.dev.write(&self.ped_data[ped].data[up..(self.ped_data[ped].length as usize)]).unwrap();
         }
     }
     
     /// This method writes all data from Pedals.peddata to the device
-    pub fn write_pedals(&self, dev: & hidapi::HidDevice) {
-        dev.write(&self.start).unwrap();
+    pub fn write_pedals(&self) {
+        self.dev.write(&self.start).unwrap();
 
         for (i, _pedal) in self.ped_data.iter().enumerate() {
-            self.write_pedal(dev, i)
+            self.write_pedal(i)
         }
     }
 
@@ -223,7 +268,7 @@ impl Pedals {
     pub fn set_modifier(& mut self, ped:usize, modifier:&str) {
         let modifier = match key_operations::Modifier::str_to_enum(modifier) {
             Some(x) => x,
-            None => error!("Unkown modifier! Please use one of the following: ctrl, shift, alt, win."),
+            None => error!("Unknown modifier! Please use one of the following: ctrl, shift, alt, win."),
         };
 
         self.set_type(ped, Type::Key);
@@ -271,7 +316,7 @@ impl Pedals {
         self.ped_data[ped].data[direction] = value_u8;
     }
 
-    pub fn print_string(&self, dev: & hidapi::HidDevice, response: & mut [u8]) -> Option<String> {
+    pub fn print_string(&self, response: & mut [u8]) -> Option<String> {
         let mut string = String::new();
         let mut len = response[0] - 2;
         let mut ind = 2;
@@ -279,7 +324,7 @@ impl Pedals {
         while len > 0 {
 
             if ind == 8 {
-                dev.read(&mut response[..]).unwrap();
+                self.dev.read(&mut response[..]).unwrap();
 
                 ind = 0;
             }
