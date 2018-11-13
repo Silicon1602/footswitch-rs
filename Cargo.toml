@@ -1,11 +1,11 @@
 [package]
 name = "footswitch-rs"
 version = "0.1.0"
-authors = ["Dennis <dennis@dennispotter.eu>"]
+authors = ["Dennis Potter <dennis@dennispotter.eu>"]
 
 [dependencies]
-structopt = "0.2.10"
+structopt = "0.2.13"
 hidapi = "0.5.0"
-users = "0.7"
+users = "0.8"
 colored = "1.6.1"
 

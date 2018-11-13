@@ -4,6 +4,7 @@ extern crate hidapi;
 use std::process;
 use std::ffi::CString;
 use colored::*;
+use messages::*;
 
 #[derive(Copy, Clone)]
 enum Type {
@@ -285,19 +286,11 @@ impl Pedals {
         self.ped_data[ped].data[4] |= mousebutton as u8;
     }
 
-    pub fn set_mouse_xyw(& mut self, ped:usize, value:&str, direction:usize) {
+    pub fn set_mouse_xyw(& mut self, ped:usize, value_i8:i8, direction:usize) {
         // The values of the directions match the array index of ped_data[].data[]
         // X = 5
         // Y = 6
         // W = 7
-
-        // Translate value passed by user to integer
-        let value_i8 = match value.parse::<i8>() {
-            Ok(x) => x,
-            Err(x) => {
-                error!("The value of {} ({}) must be in [-128, 127]! Message: {}.", direction, value, x)
-            }
-        };
 
         // Translate to u8
         let mut value_u8 = value_i8 as u8;
@@ -371,5 +364,18 @@ impl Pedals {
         self.ped_data[ped].data[0] = self.ped_data[ped].length;
 
 
+    }
+
+    /// Update device and close application
+    pub fn update_and_close(& mut self) {
+        self.write_pedals();
+    
+        info!("Successfully wrote everything to footpedal!");
+        info!("The current state of the device is shown below.");
+    
+        // Show user current state of pedal
+        self.read_pedals(vec![0,1,2]);
+    
+        goodbye();
     }
 }

@@ -26,10 +26,15 @@ macro_rules! error {
     };
 }
 
-pub fn welcome(string: &str) {
-    println!("┌{}┐", "─".repeat(string.len() + 20));
-    println!("│{text:^-width$}│", text = string, width = string.len() + 20);
-    println!("├{}┘", "─".repeat(string.len() + 20));
+pub fn welcome() {
+    const AUTHORS: &'static str = env!("CARGO_PKG_AUTHORS");
+    const NAME: &'static str = env!("CARGO_PKG_NAME");
+
+    let name_authors = &[NAME, "  |  ", AUTHORS].concat();
+
+    println!("┌{}┐", "─".repeat(name_authors.len() + 20));
+    println!("│{text:^-width$}│", text = name_authors, width = name_authors.len() + 20);
+    println!("├{}┘", "─".repeat(name_authors.len() + 20));
 }
 
 pub fn goodbye() {
