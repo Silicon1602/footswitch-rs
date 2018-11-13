@@ -2,16 +2,15 @@
 //! 
 //! `footswitch-rs` enables you to use footswitches of <xxx>
 //! 
-pub mod key_operations;
-pub mod pedal_operations;
 
-#[macro_use]
-mod messages;
-
-#[macro_use]
 extern crate structopt;
 extern crate users;
 extern crate colored;
+
+#[macro_use]
+pub mod messages;
+pub mod key_operations;
+pub mod pedal_operations;
 
 use std::process;
 use structopt::StructOpt;
