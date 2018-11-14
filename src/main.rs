@@ -208,6 +208,16 @@ fn main() {
                 {
                     check_length(&pedal, &input);
 
+                    let mut unused_pedals: Vec<u8> = Vec::new();
+
+                    for number in 0..3 {
+                        if !pedal.contains(&(number as u8)) {
+                            unused_pedals.push(number);
+                        }
+                    }
+
+                    pedals.refresh_values(unused_pedals);
+
                     for (i, pedal) in pedal.iter().enumerate() { 
                         pedals.set_key(*pedal as usize, input[i].as_str()); 
                     }

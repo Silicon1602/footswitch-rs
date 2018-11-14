@@ -378,4 +378,25 @@ impl Pedals {
     
         goodbye();
     }
+    
+    /// Prevent the application from purging pedals that are not
+    /// explicitly set
+    pub fn refresh_values(& mut self, peds: Vec<u8>) {
+        
+        // First read from pedals that are defined in peds
+        for (i, ped) in peds.iter().enumerate() {
+            // Read value from pedal and directly translate it to a key
+            let mut key_value = self.read_pedal(ped);
+
+            match Type::u8_to_enum(key_value[1]) {
+                Some(Type::Key) => {
+                    self.set_type(*ped as usize, Type::Key);
+                    self.ped_data[*ped as usize].data[3] = key_value[3];
+                },
+
+                None => error!("The key type which was returned by the pedal was invalid!"),
+                _ => {} 
+            };
+        }
+    }
 }
