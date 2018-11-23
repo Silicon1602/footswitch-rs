@@ -84,7 +84,7 @@ impl Pedals {
                 error!("Could not open device. Make sure your device is connected. Maybe try to reconnect it.")
             },
         };
-    
+
         // Prepare variables
         let start = [0x01u8, 0x80, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00];
 
@@ -96,7 +96,7 @@ impl Pedals {
         default_data[0] = 0x08;
 
         // Initialize actual object
-        Pedals { 
+        Pedals {
             dev: dev,
             start: start,
 
@@ -112,7 +112,7 @@ impl Pedals {
                     length: 8,
                 },
                 PedalsData {
-                    header: header_2,  
+                    header: header_2,
                     data: default_data,
                     length: 8, },
             ]
@@ -146,7 +146,7 @@ impl Pedals {
         }
 
         // Print header
-        println!("├{}┐", "─".repeat(total_width)); 
+        println!("├{}┐", "─".repeat(total_width));
         println!("│{name:^width$}│", name = "Programmed Keys", width = total_width);
         println!("╞{}╡", "═".repeat(total_width));
 
@@ -243,7 +243,7 @@ impl Pedals {
             self.dev.write(&self.ped_data[ped].data[up..(self.ped_data[ped].length as usize)]).unwrap();
         }
     }
-    
+
     /// This method writes all data from Pedals.peddata to the device
     pub fn write_pedals(&self) {
         self.dev.write(&self.start).unwrap();
@@ -278,7 +278,7 @@ impl Pedals {
     pub fn set_mousebutton(& mut self, ped:usize, mousebutton:&str) {
         let mousebutton = match key_operations::MouseButton::str_to_enum(mousebutton) {
             Some(x) => x,
-            None => error!("Unknown mousebutton! Please use one of the following: mouse_left, mouse_middle, mouse_right, mouse_double."),
+            None => error!("Unknown mousebutton! Please use one of the following: left, middle, right, double."),
         };
 
         self.set_type(ped, Type::Mouse);
@@ -369,22 +369,21 @@ impl Pedals {
     /// Update device and close application
     pub fn update_and_close(& mut self) {
         self.write_pedals();
-    
+
         info!("Successfully wrote everything to footpedal!");
         info!("The current state of the device is shown below.");
-    
+
         // Show user current state of pedal
         self.read_pedals(vec![0,1,2]);
-    
+
         goodbye();
     }
-    
-    /// Prevent the application from purging pedals that are not
-    /// explicitly set
+
+    /// Prevent the application from purging pedals that are not explicitly set
     pub fn refresh_values(& mut self, peds: Vec<u8>) {
-        
+
         // First read from pedals that are defined in peds
-        for (i, ped) in peds.iter().enumerate() {
+        for ped in peds.iter() {
             // Read value from pedal and directly translate it to a key
             let mut key_value = self.read_pedal(ped);
 
@@ -393,9 +392,21 @@ impl Pedals {
                     self.set_type(*ped as usize, Type::Key);
                     self.ped_data[*ped as usize].data[3] = key_value[3];
                 },
+                Some(Type::Mouse) => {
+                    self.set_type(*ped as usize, Type::Mouse);
+                    self.ped_data[*ped as usize].data[4] = key_value[4];
+                },
+                Some(Type::MouseKey) => {
+                    self.set_type(*ped as usize, Type::MouseKey);
+                    self.ped_data[*ped as usize].data[3] = key_value[3];
+                    self.ped_data[*ped as usize].data[4] = key_value[4];
+                },
+                Some(Type::String) => {
+                    self.set_type(*ped as usize, Type::String);
+                },
 
                 None => error!("The key type which was returned by the pedal was invalid!"),
-                _ => {} 
+                _ => {}
             };
         }
     }

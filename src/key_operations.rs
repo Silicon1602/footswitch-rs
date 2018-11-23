@@ -196,7 +196,7 @@ static KEY_MAP : &[(&str, u8)] = &[
     ("("                   , 0xaf),
     (")"                   , 0xb0),
     ("|"                   , 0xb1),
-    ("|"                   , 0xb2), 
+    ("|"                   , 0xb2),
     (":"                   , 0xb3),
     ("\""                  , 0xb4),
     ("~"                   , 0xb5),
@@ -261,7 +261,7 @@ static KEY_MAP : &[(&str, u8)] = &[
     ("XF86WWW"             , 0xf0),
     ("XF86Back"            , 0xf1),
     ("XF86Forward"         , 0xf2),
-    ("Cancel"              , 0xf3), 
+    ("Cancel"              , 0xf3),
     ("Find"                , 0xf4),
     ("XF86ScrollUp"        , 0xf5),
     ("XF86ScrollDown"      , 0xf6),
@@ -314,10 +314,10 @@ pub enum MouseButton {
 impl MouseButton {
     pub fn str_to_enum(mousebutton:&str) -> Option<MouseButton> {
         match mousebutton {
-            "mouse_left" => Some(MouseButton::MouseLeft),
-            "mouse_right" => Some(MouseButton::MouseRight),
-            "mouse_middle" => Some(MouseButton::MouseMiddle),
-            "mouse_double" => Some(MouseButton::MouseDouble),
+            "left" => Some(MouseButton::MouseLeft),
+            "right" => Some(MouseButton::MouseRight),
+            "middle" => Some(MouseButton::MouseMiddle),
+            "double" => Some(MouseButton::MouseDouble),
             _ => None,
         }
     }
@@ -334,10 +334,10 @@ impl MouseButton {
 
     pub fn enum_to_string(mousebutton:MouseButton) -> String {
         match mousebutton {
-            MouseButton::MouseLeft => "mouse_left".to_string(),
-            MouseButton::MouseRight => "mouse_right".to_string(),
-            MouseButton::MouseMiddle => "mouse_middle".to_string(),
-            MouseButton::MouseDouble => "mouse_double".to_string(),
+            MouseButton::MouseLeft => "left".to_string(),
+            MouseButton::MouseRight => "right".to_string(),
+            MouseButton::MouseMiddle => "middle".to_string(),
+            MouseButton::MouseDouble => "double".to_string(),
         }
     }
 }
@@ -404,7 +404,7 @@ pub fn print_key(response: &[u8]) -> Option<String> {
             return Some(key_combo);
         }
     }
-    
+
     None
 }
 
@@ -446,7 +446,7 @@ pub fn print_mouse_key(response: &[u8]) -> Option<String> {
         },
         None => {}
     }
-    
+
     Some(key_mouse_string)
 }
 
@@ -454,10 +454,10 @@ pub fn print_key_map(rows: usize) {
     print!("{}", " ‖ Key Name             ¦ Value     ".repeat(rows));
     println!(" ‖");
 
-    println!(" {}", "-".repeat(rows*36));        
+    println!(" {}", "-".repeat(rows*36));
     for (i, key) in KEY_MAP.iter().enumerate() {
 
-        print!(" ‖ {name:<-name_width$} ¦ <0x{value:>0value_width$x}>    ",  
+        print!(" ‖ {name:<-name_width$} ¦ <0x{value:>0value_width$x}>    ",
                  name=key.0, name_width=20, value = key.1, value_width = 2);
 
         if (i + 1) % rows == 0 {

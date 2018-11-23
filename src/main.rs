@@ -1,7 +1,7 @@
 //! Footswitch-RS
-//! 
+//!
 //! `footswitch-rs` enables you to use footswitches of <xxx>
-//! 
+//!
 
 extern crate structopt;
 extern crate users;
@@ -55,7 +55,7 @@ enum Command {
         #[structopt(short = "p", long = "pedal")]
         pedal: Vec<u8>,
     },
-    
+
     /// Read from the footpedal
     #[structopt(name = "read")]
     Read {
@@ -83,7 +83,7 @@ enum Set {
         input: Vec<String>,
     },
 
-    /// Set a mousebutton to one or more pedals
+    /// Set a mousebutton (left/right/middle/double) to one or more pedals
     #[structopt(name = "mousebutton")]
     SetMousebutton {
         /// Specify pedal(s) to modify: [0 | 1 | 2]
@@ -94,7 +94,7 @@ enum Set {
         #[structopt(short = "i", long = "input")]
         input: Vec<String>,
     },
-    
+
     /// Set X, Y, and W movement of the mouse pointer for one or more pedals
     #[structopt(name = "mousemovement")]
     SetMousemovement {
@@ -142,7 +142,7 @@ enum Append {
         input: Vec<String>,
     },
 
-    /// Append a modifier to one or more pedals
+    /// Append a modifier (ctrl/shift/alt/win) to one or more pedals
     #[structopt(name = "modifier")]
     AppendModifier {
         /// Specify pedal(s) to modify: [0 | 1 | 2]
@@ -160,10 +160,10 @@ fn main() {
 
     welcome();
     check_sudo();
-    
+
     // All options that don't need the device to be open
     // Print all keys and exit application
-    match opt.cmd { 
+    match opt.cmd {
         Some(Command::ListKeys { columns }) => {
             key_operations::print_key_map(columns);
             goodbye();
@@ -171,12 +171,58 @@ fn main() {
         _ => { /* Do nothing, there are still lots of other options further below */ }
     }
 
-    let mut pedals = pedal_operations::Pedals::new(); 
+    let mut pedals = pedal_operations::Pedals::new();
+
+    // Make sure that the application does not purge pedals that are not explicitly set
+    // by refreshing pedals that are not in use.
+    //
+    // When Command::Clear is set, refresh only the pedals that are NOT defined.
+    let mut unused_pedals: Vec<u8> = Vec::new();
+
+    match &opt.cmd {
+        Some(Command::Set { cmd }) => {
+            match cmd {
+                Set::SetKey { pedal, .. } |
+                Set::SetMousebutton { pedal, .. } |
+                Set::SetMousemovement { pedal, .. } => {
+                    for number in 0..3 {
+                        if !pedal.contains(&(number as u8)) {
+                            unused_pedals.push(number);
+                        }
+                    }
+                }
+            }
+        },
+        Some(Command::Append { cmd }) => {
+            match cmd {
+                Append::AppendKey { pedal, .. } |
+                Append::AppendString { pedal, .. } |
+                Append::AppendModifier { pedal, .. } => {
+                    for number in 0..3 {
+                        if !pedal.contains(&(number as u8)) {
+                            unused_pedals.push(number);
+                        }
+                    }
+                }
+            }
+        },
+        Some(Command::Clear { pedal }) => {
+            for number in 0..3 {
+                if !pedal.contains(&(number as u8)) {
+                    unused_pedals.push(number);
+                }
+            }
+        }
+        _ => { /* Do nothing, statement below will cover this */ }
+    }
+
+    pedals.refresh_values(unused_pedals);
 
     // All options that need the device to be open
-    match opt.cmd { 
+    match opt.cmd {
+
         Some(Command::Append { cmd }) => {
-            match cmd { 
+            match cmd {
                 Append::AppendKey { pedal, input } =>
                 {
 
@@ -185,7 +231,7 @@ fn main() {
                 {
                     check_length(&pedal, &input);
 
-                    for (i, pedal) in pedal.iter().enumerate() { 
+                    for (i, pedal) in pedal.iter().enumerate() {
                         pedals.set_string(*pedal as usize, input[i].as_str());
                     }
                 },
@@ -193,7 +239,7 @@ fn main() {
                 {
                     check_length(&pedal, &input);
 
-                    for (i, pedal) in pedal.iter().enumerate() { 
+                    for (i, pedal) in pedal.iter().enumerate() {
                         pedals.set_modifier(*pedal as usize, input[i].as_str());
                     }
                 }
@@ -208,37 +254,27 @@ fn main() {
                 {
                     check_length(&pedal, &input);
 
-                    let mut unused_pedals: Vec<u8> = Vec::new();
-
-                    for number in 0..3 {
-                        if !pedal.contains(&(number as u8)) {
-                            unused_pedals.push(number);
-                        }
-                    }
-
-                    pedals.refresh_values(unused_pedals);
-
-                    for (i, pedal) in pedal.iter().enumerate() { 
-                        pedals.set_key(*pedal as usize, input[i].as_str()); 
+                    for (i, pedal) in pedal.iter().enumerate() {
+                        pedals.set_key(*pedal as usize, input[i].as_str());
                     }
                 },
                 Set::SetMousebutton { pedal, input } =>
                 {
                     check_length(&pedal, &input);
 
-                    for (i, pedal) in pedal.iter().enumerate() { 
-                        pedals.set_mousebutton(*pedal as usize, input[i].as_str()); 
+                    for (i, pedal) in pedal.iter().enumerate() {
+                        pedals.set_mousebutton(*pedal as usize, input[i].as_str());
                     }
                 }
 
                 Set::SetMousemovement { pedal, x, y, w } =>
                 {
-                    
+
                     if pedal.len() != x.len() || x.len() != y.len() || y.len() != w.len() {
-                        error!("You must define X, Y, and W for every pedal. If a direction is not needed, set it to 0!");
+                        error!("You must define x, y, and w for every pedal. If a direction is not needed, set it to 0!");
                     }
 
-                    for (i, pedal) in pedal.iter().enumerate() { 
+                    for (i, pedal) in pedal.iter().enumerate() {
                         pedals.set_mouse_xyw(*pedal as usize, x[i], 5);
                         pedals.set_mouse_xyw(*pedal as usize, y[i], 6);
                         pedals.set_mouse_xyw(*pedal as usize, w[i], 7);
@@ -249,10 +285,10 @@ fn main() {
             pedals.update_and_close();
         },
 
-        Some(Command::Clear { pedal }) => {
-
+        Some(Command::Clear { .. }) => {
+            pedals.update_and_close();
         },
-        
+
         Some(Command::Read {all: all_var, pedals: ped_list}) => {
             if ped_list.len() > 3 {
                 error!("Number of pedals may not be bigger than 3!");
