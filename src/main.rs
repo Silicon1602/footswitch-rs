@@ -225,7 +225,11 @@ fn main() {
             match cmd {
                 Append::AppendKey { pedal, input } =>
                 {
+                    check_length(&pedal, &input);
 
+                    for (i, pedal) in pedal.iter().enumerate() {
+                        pedals.append_key(*pedal as usize, input[i].as_str());
+                    }
                 },
                 Append::AppendString { pedal, input } =>
                 {

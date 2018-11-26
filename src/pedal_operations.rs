@@ -264,6 +264,20 @@ impl Pedals {
         }
     }
 
+    pub fn append_key(& mut self, ped:usize, key:&str) {
+        if let Some(encoded_key) = key_operations::encode_byte(key) {
+            self.set_type(ped, Type::String);
+
+            let mut key = Vec::new();
+            key.push(encoded_key);
+
+            self.compile_string_data(ped,key);
+        }
+        else {
+            error!("Key '{}' is not recognized! Please provide a valid key, listed in './footswitch-rs --listkeys 4'", key);
+        }
+    }
+
     pub fn set_modifier(& mut self, ped:usize, modifier:&str) {
         let modifier = match key_operations::Modifier::str_to_enum(modifier) {
             Some(x) => x,
@@ -403,6 +417,16 @@ impl Pedals {
                 },
                 Some(Type::String) => {
                     self.set_type(*ped as usize, Type::String);
+
+                    // Start byte should be 2
+                    let mut key_vec = Vec::new();
+                    for (i, c) in key_value.iter().enumerate() {
+                        if i >= 2 && *c != 0 {
+                            key_vec.push(*c);
+                        }
+                    }
+
+                    self.compile_string_data(*ped as usize, key_vec);
                 },
 
                 None => error!("The key type which was returned by the pedal was invalid!"),
