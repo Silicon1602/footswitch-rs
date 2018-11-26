@@ -1,6 +1,11 @@
 //! Footswitch-RS
 //!
-//! `footswitch-rs` enables you to use footswitches of <xxx>
+//! `footswitch-rs` enables you to manage PCSensor foot switches. Following
+//! vnedorId:productId combinations are supported:
+//!
+//!  * 0c45:7403
+//!  * 0c45:7404
+//!  * 413d:2107
 //!
 
 extern crate structopt;
