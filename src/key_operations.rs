@@ -355,7 +355,8 @@ pub fn encode_byte(c: &str) -> Option<u8> {
 pub fn decode_byte(u: &u8) -> Option<String> {
     for key in KEY_MAP.iter() {
         if key.1 == *u {
-            return Some(key.0.to_string())
+            let return_value = format!("{}{}{}", "<", key.0.to_string(), ">");
+            return Some(return_value)
         }
     }
 
