@@ -199,17 +199,10 @@ fn main() {
                 }
             }
         },
-        Some(Command::Append { cmd }) => {
-            match cmd {
-                Append::AppendKey { pedal, .. } |
-                Append::AppendString { pedal, .. } |
-                Append::AppendModifier { pedal, .. } => {
-                    for number in 0..3 {
-                        if !pedal.contains(&(number as u8)) {
-                            unused_pedals.push(number);
-                        }
-                    }
-                }
+        Some(Command::Append { .. }) => {
+            // Since we want to append the key, we want to keep all pedals
+            for number in 0..3 {
+                unused_pedals.push(number);
             }
         },
         Some(Command::Clear { pedal }) => {

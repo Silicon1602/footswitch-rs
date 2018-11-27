@@ -181,7 +181,7 @@ impl Pedals {
         println!("├{}┘", "─".repeat(total_width));
     }
 
-    /// Sets the type of the function. False (0) if everything went fine, True (1) if
+    /// Sets the type of the function. False (0) if everything went fine, true (1) if
     /// an error occurred.
     fn set_type(& mut self, ped:usize, typ:Type) {
         let set_value = if self.ped_data[ped].data[1] == 0 { true } else { false };
@@ -204,7 +204,7 @@ impl Pedals {
                 let ret;
 
                 if self.ped_data[ped].data[1] == Type::String as u8 {
-                    // if type is Key or Mouse, and String is already set, return false
+                    // if new type is Key or Mouse, and String is already set, return false
                     ret = true;
                 }
                 else {
@@ -218,7 +218,7 @@ impl Pedals {
         };
 
         if ret {
-            error!("Invalid combination of options!");
+            error!("Invalid combination of options! Please see https://git.dennispotter.eu/Dennis/footswitch-rs/wiki");
         }
     }
 
@@ -404,6 +404,10 @@ impl Pedals {
             match Type::u8_to_enum(key_value[1]) {
                 Some(Type::Key) => {
                     self.set_type(*ped as usize, Type::Key);
+                    // Modifiers
+                    self.ped_data[*ped as usize].data[2] = key_value[2];
+
+                    // Keys
                     self.ped_data[*ped as usize].data[3] = key_value[3];
                 },
                 Some(Type::Mouse) => {
