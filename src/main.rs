@@ -164,7 +164,6 @@ fn main() {
     let opt = Opt::from_args();
 
     welcome();
-    check_sudo();
 
     // All options that don't need the device to be open
     // Print all keys and exit application
@@ -175,6 +174,8 @@ fn main() {
         },
         _ => { /* Do nothing, there are still lots of other options further below */ }
     }
+
+    check_sudo();
 
     let mut pedals = pedal_operations::Pedals::new();
 
