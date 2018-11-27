@@ -1,5 +1,3 @@
-***This application is still under development. Currently, the `append` subcommand shows some problems.***
-
 # footswitch-rs
 
 This repository contains a C to Rust translation of the GitHub repository [rgerganov/footswitch](https://github.com/rgerganov/footswitch). Although I use footswitch-rs myself to manage my footswitch, the main purpose of its development was to practice Rust. Since I do not possess Apple hardware, I did not test this application on MacOS (unlike [rgerganov](https://github.com/rgerganov) did with the original footswitch). However, with some modifications, footswitch-rs should run on MacOS as well.
